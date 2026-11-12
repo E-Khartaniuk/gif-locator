@@ -73,7 +73,19 @@
   </dl>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
+<mat-dialog-actions class="actions">
+  <button mat-stroked-button type="button" (click)="copyLink()">
+    <mat-icon>link</mat-icon>
+    Copy link
+  </button>
+
+  <button mat-flat-button type="button" [disabled]="isDownloading()" (click)="download()">
+    <mat-icon>download</mat-icon>
+    {{ isDownloading() ? 'Downloading...' : 'Download' }}
+  </button>
+
+  <span class="actions__spacer"></span>
+
   <a mat-button [href]="gif().pageUrl" target="_blank" rel="noopener">Open on Giphy</a>
-  <button mat-button mat-dialog-close>Close</button>
+  <button mat-button type="button" mat-dialog-close>Close</button>
 </mat-dialog-actions>
