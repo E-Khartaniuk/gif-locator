@@ -1,5 +1,19 @@
+<app-search-bar [query]="params().query" (search)="onSearch($event)" />
+
+<h2 class="results-title">
+  @if (params().query) {
+    Results for "{{ params().query }}"
+  } @else {
+    Trending now
+  }
+</h2>
+
 @if (isLoading()) {
   <p>Loading...</p>
+} @else if (hasError()) {
+  <p>Something went wrong. Please try again.</p>
+} @else if (isEmpty()) {
+  <p>Nothing found for "{{ params().query }}".</p>
 } @else {
   <section class="gif-grid">
     @for (gif of gifs(); track gif.id) {

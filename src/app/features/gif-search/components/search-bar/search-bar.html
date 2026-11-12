@@ -1,0 +1,17 @@
+<form class="search-bar" (ngSubmit)="submit()">
+  <mat-form-field appearance="outline" class="search-bar__field" subscriptSizing="dynamic">
+    <mat-icon matPrefix>search</mat-icon>
+    <input
+      matInput
+      type="search"
+      placeholder="Search GIFs..."
+      aria-label="Search GIFs"
+      [formControl]="control"
+    />
+    @if (control.value) {
+      <button matIconSuffix mat-icon-button type="button" aria-label="Clear" (click)="clear()">
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </mat-form-field>
+</form>

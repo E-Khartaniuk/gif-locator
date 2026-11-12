@@ -11,7 +11,7 @@
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  background: #2a2a2a;
+  background: var(--mat-sys-surface-container);
   transition: transform 0.2s;
 
   &:hover,
