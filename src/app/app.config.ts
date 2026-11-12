@@ -5,8 +5,9 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { apiKeyInterceptor } from './core/interceptors/api-key-interceptor';
 
 export const appConfig: ApplicationConfig = {
-  providers: 
-    [provideBrowserGlobalErrorListeners(), 
-    provideRouter(routes), 
-    provideHttpClient(withInterceptors([apiKeyInterceptor]))],
+  providers: [
+    provideBrowserGlobalErrorListeners(),
+           provideRouter(routes),
+    provideHttpClient(withInterceptors([apiKeyInterceptor])),
+  ],
 };
