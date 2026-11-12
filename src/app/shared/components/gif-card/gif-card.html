@@ -1,0 +1,3 @@
+<button type="button" class="gif-card" (click)="selected.emit(gif())">
+  <img class="gif-card__image" [src]="gif().previewUrl" [alt]="gif().title" loading="lazy" />
+</button>

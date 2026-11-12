@@ -1,0 +1,9 @@
+@if (isLoading()) {
+  <p>Loading...</p>
+} @else {
+  <section class="gif-grid">
+    @for (gif of gifs(); track gif.id) {
+      <app-gif-card [gif]="gif" (selected)="onGifSelected($event)" />
+    }
+  </section>
+}
