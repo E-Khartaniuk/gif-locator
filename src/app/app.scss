@@ -1,0 +1,14 @@
+.header {
+  padding: 16px;
+  text-align: center;
+
+  &__title {
+    margin: 0;
+  }
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px 32px;
+}
