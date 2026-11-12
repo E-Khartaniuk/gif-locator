@@ -3,10 +3,11 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, distinctUntilChanged, map, of, startWith, switchMap } from 'rxjs';
 
-import { GiphyApi } from '../../../core/services/giphy-api';
+import { GiphyApi, MAX_PAGE_INDEX, MAX_RESULTS, PAGE_SIZE } from '../../../core/services/giphy-api';
 import { Gif, GifPage } from '../../../core/models/gif.model';
 import { GifCard } from '../../../shared/components/gif-card/gif-card';
 import { SearchBar } from '../components/search-bar/search-bar';
+import { MatPaginator, PageEvent } from '@angular/material/paginator';
 
 type SearchState =
   { status: 'loading' } | { status: 'success'; result: GifPage } | { status: 'error' };
@@ -18,7 +19,7 @@ interface SearchParams {
 
 @Component({
   selector: 'app-gif-search-page',
-  imports: [GifCard, SearchBar],
+  imports: [GifCard, SearchBar, MatPaginator],
   templateUrl: './gif-search-page.html',
   styleUrl: './gif-search-page.scss',
 })
@@ -27,10 +28,26 @@ export class GifSearchPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
+  protected readonly pageSize = PAGE_SIZE;
+
+  protected readonly totalCount = computed(() => {
+    const state = this.state();
+    return state.status === 'success' ? Math.min(state.result.totalCount, MAX_RESULTS) : 0;
+  });
+
+  protected onPageChange(event: PageEvent): void {
+    const page = event.pageIndex + 1;
+    this.router.navigate([], {
+      queryParams: { page: page === 1 ? null : page },
+      queryParamsHandling: 'merge',
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   private readonly params$ = this.route.queryParamMap.pipe(
     map((params): SearchParams => ({
       query: (params.get('q') ?? '').trim(),
-      page: Math.max(Number(params.get('page')) || 1, 1) - 1,
+      page: Math.min(Math.max(Number(params.get('page')) || 1, 1) - 1, MAX_PAGE_INDEX),
     })),
     distinctUntilChanged((a, b) => a.query === b.query && a.page === b.page),
   );

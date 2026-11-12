@@ -21,3 +21,14 @@
     }
   </section>
 }
+@if (totalCount() > pageSize) {
+  <mat-paginator
+    class="paginator"
+    [length]="totalCount()"
+    [pageIndex]="params().page"
+    [pageSize]="pageSize"
+    [hidePageSize]="true"
+    [showFirstLastButtons]="true"
+    (page)="onPageChange($event)"
+  />
+}

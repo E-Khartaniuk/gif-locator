@@ -7,7 +7,9 @@ import { GiphyListResponseDto } from '../models/giphy-api.models';
 import { GifPage } from '../models/gif.model';
 import { toGifPage } from '../mappers/gif.mapper';
 
-export const PAGE_SIZE = 20;
+export const PAGE_SIZE = 21;
+export const MAX_RESULTS = 5000;
+export const MAX_PAGE_INDEX = Math.floor((MAX_RESULTS - 1) / PAGE_SIZE);
 
 @Injectable({ providedIn: 'root' })
 export class GiphyApi {
