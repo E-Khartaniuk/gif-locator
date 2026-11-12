@@ -7,7 +7,7 @@ import { apiKeyInterceptor } from './core/interceptors/api-key-interceptor';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-           provideRouter(routes),
+    provideRouter(routes),
     provideHttpClient(withInterceptors([apiKeyInterceptor])),
   ],
 };
