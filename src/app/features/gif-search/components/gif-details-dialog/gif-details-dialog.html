@@ -1,91 +1,107 @@
-<h2 mat-dialog-title class="title">{{ gif().title }}</h2>
+@if (gif(); as gif) {
+  <h2 mat-dialog-title class="title">{{ gif.title }}</h2>
 
-<mat-dialog-content class="details">
-  <div class="details__media">
-    <button
-      mat-icon-button
-      class="details__nav"
-      aria-label="Previous GIF"
-      [disabled]="!hasPrev()"
-      (click)="prev()"
-    >
-      <mat-icon>chevron_left</mat-icon>
-    </button>
+  <mat-dialog-content class="details">
+    <div class="details__media">
+      <button
+        mat-icon-button
+        class="details__nav"
+        aria-label="Previous GIF"
+        [disabled]="!store.hasPrev()"
+        (click)="store.selectPrev()"
+      >
+        <mat-icon>chevron_left</mat-icon>
+      </button>
 
-    <img
-      class="details__image"
-      [src]="gif().originalUrl"
-      [alt]="gif().title"
-      [width]="gif().width"
-      [height]="gif().height"
-    />
+      <img
+        class="details__image"
+        [src]="gif.originalUrl"
+        [alt]="gif.title"
+        [width]="gif.width"
+        [height]="gif.height"
+      />
 
-    <button
-      mat-icon-button
-      class="details__nav"
-      aria-label="Next GIF"
-      [disabled]="!hasNext()"
-      (click)="next()"
-    >
-      <mat-icon>chevron_right</mat-icon>
-    </button>
-  </div>
+      <button
+        mat-icon-button
+        class="details__nav"
+        aria-label="Next GIF"
+        [disabled]="!store.hasNext()"
+        (click)="store.selectNext()"
+      >
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
 
-  <p class="details__counter">{{ index() + 1 }} / {{ gifs.length }}</p>
-
-  <dl class="details__info">
-    <dt>Author</dt>
-    <dd>
-      @if (gif().author; as author) {
-        <a class="details__author" [href]="author.profileUrl" target="_blank" rel="noopener">
-          <img [src]="author.avatarUrl" alt="" width="24" height="24" />
-          {{ author.displayName }}
-        </a>
-      } @else {
-        Unknown
-      }
-    </dd>
-
-    <dt>Uploaded</dt>
-    <dd>
-      @if (gif().createdAt; as createdAt) {
-        {{ createdAt | date: 'mediumDate' }}
-      } @else {
-        Unknown
-      }
-    </dd>
-
-    <dt>Resolution</dt>
-    <dd>{{ gif().width }} × {{ gif().height }} px</dd>
-
-    <dt>Size</dt>
-    <dd>{{ gif().sizeBytes | fileSize }}</dd>
-
-    <dt>Rating</dt>
-    <dd>{{ gif().rating | uppercase }}</dd>
-
-    @if (gif().source) {
-      <dt>Source</dt>
-      <dd>
-        <a [href]="gif().source" target="_blank" rel="noopener">{{ gif().source }}</a>
-      </dd>
+    @if (store.selectedPosition(); as position) {
+      <p class="details__counter">{{ position }} / {{ store.totalCount() }}</p>
     }
-  </dl>
-</mat-dialog-content>
 
-<mat-dialog-actions class="actions">
-  <button mat-stroked-button type="button" (click)="copyLink()">
-    <mat-icon>link</mat-icon>
-    Copy link
-  </button>
+    <dl class="details__info">
+      <dt>Author</dt>
+      <dd>
+        @if (gif.author; as author) {
+          <a class="details__author" [href]="author.profileUrl" target="_blank" rel="noopener">
+            <img [src]="author.avatarUrl" alt="" width="24" height="24" />
+            {{ author.displayName }}
+          </a>
+        } @else {
+          Unknown
+        }
+      </dd>
 
-  <button mat-flat-button type="button" [disabled]="isDownloading()" (click)="download()">
-    <mat-icon>download</mat-icon>
-    {{ isDownloading() ? 'Downloading...' : 'Download' }}
-  </button>
+      <dt>Uploaded</dt>
+      <dd>
+        @if (gif.createdAt; as createdAt) {
+          {{ createdAt | date: 'mediumDate' }}
+        } @else {
+          Unknown
+        }
+      </dd>
 
-  <span class="actions__spacer"></span>
+      <dt>Resolution</dt>
+      <dd>{{ gif.width }} × {{ gif.height }} px</dd>
 
-  <a mat-button [href]="gif().pageUrl" target="_blank" rel="noopener">Open on Giphy</a>
-  <button mat-button type="button" mat-dialog-close>Close</button>
-</mat-dialog-actions>
+      <dt>Size</dt>
+      <dd>{{ gif.sizeBytes | fileSize }}</dd>
+
+      <dt>Rating</dt>
+      <dd>{{ gif.rating | uppercase }}</dd>
+
+      @if (gif.source) {
+        <dt>Source</dt>
+        <dd>
+          <a [href]="gif.source" target="_blank" rel="noopener">{{ gif.source }}</a>
+        </dd>
+      }
+    </dl>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="actions">
+    <button mat-stroked-button type="button" (click)="copyLink()">
+      <mat-icon>link</mat-icon>
+      Copy link
+    </button>
+
+    <button mat-flat-button type="button" [disabled]="isDownloading()" (click)="download()">
+      <mat-icon>download</mat-icon>
+      {{ isDownloading() ? 'Downloading...' : 'Download' }}
+    </button>
+
+    <span class="actions__spacer"></span>
+
+    <a mat-button [href]="gif.pageUrl" target="_blank" rel="noopener">Open on Giphy</a>
+    <button mat-button type="button" mat-dialog-close>Close</button>
+  </mat-dialog-actions>
+} @else {
+  <mat-dialog-content class="placeholder">
+    @if (store.isSelectedGifLoading()) {
+      <mat-spinner diameter="48" aria-label="Loading GIF" />
+    } @else {
+      <p>This GIF is not available.</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Close</button>
+  </mat-dialog-actions>
+}

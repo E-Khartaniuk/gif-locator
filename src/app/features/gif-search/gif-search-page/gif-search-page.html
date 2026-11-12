@@ -1,31 +1,77 @@
-<app-search-bar [query]="params().query" (search)="onSearch($event)" />
+<div class="filters">
+  <app-search-bar
+    class="filters__search"
+    [query]="store.params().query"
+    (queryChange)="store.search($event)"
+  />
+
+  <mat-form-field appearance="outline" class="filters__rating" subscriptSizing="dynamic">
+    <mat-label>Max rating</mat-label>
+    <mat-select
+      [value]="store.params().rating"
+      (selectionChange)="store.setRating($event.value)"
+      panelWidth="200px"
+    >
+      <mat-select-trigger>{{ store.params().rating | uppercase }}</mat-select-trigger>
+      @for (rating of ratings; track rating) {
+        <mat-option [value]="rating">
+          <span class="rating-option__name">{{ rating | uppercase }}</span>
+          <span class="rating-option__hint">{{ ratingHints[rating] }}</span>
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
 
 <h2 class="results-title">
-  @if (params().query) {
-    Results for "{{ params().query }}"
+  @if (store.params().query) {
+    Results for "{{ store.params().query }}"
   } @else {
     Trending now
   }
 </h2>
 
-@if (isLoading()) {
-  <p>Loading...</p>
-} @else if (hasError()) {
-  <p>Something went wrong. Please try again.</p>
-} @else if (isEmpty()) {
-  <p>Nothing found for "{{ params().query }}".</p>
+@if (store.isLoading()) {
+  <section class="gif-grid" aria-busy="true" aria-label="Loading GIFs">
+    @for (item of skeletons; track item) {
+      <div class="skeleton"></div>
+    }
+  </section>
+} @else if (store.error(); as error) {
+  <app-status-message
+    icon="error"
+    [heading]="errorTexts[error].heading"
+    [message]="errorTexts[error].message"
+  >
+    <button mat-flat-button type="button" (click)="store.retry()">
+      <mat-icon>refresh</mat-icon>
+      Retry
+    </button>
+  </app-status-message>
+} @else if (store.isEmpty()) {
+  <app-status-message
+    icon="search_off"
+    heading="Nothing found for &quot;{{ store.params().query }}&quot;"
+    message="Try a different search term or a higher max rating."
+  />
 } @else {
   <section class="gif-grid">
-    @for (gif of gifs(); track gif.id) {
-      <app-gif-card [gif]="gif" (selected)="onGifSelected($event)" />
+    @for (gif of store.gifs(); track gif.id) {
+      <app-gif-card
+        [gif]="gif"
+        [downloading]="gifDownloader.isDownloading(gif.id)"
+        (selected)="store.openGif($event.id)"
+        (download)="gifDownloader.download($event)"
+      />
     }
   </section>
 }
-@if (totalCount() > pageSize) {
+
+@if (store.totalCount() > pageSize) {
   <mat-paginator
     class="paginator"
-    [length]="totalCount()"
-    [pageIndex]="params().page"
+    [length]="store.totalCount()"
+    [pageIndex]="store.params().page"
     [pageSize]="pageSize"
     [hidePageSize]="true"
     [showFirstLastButtons]="true"

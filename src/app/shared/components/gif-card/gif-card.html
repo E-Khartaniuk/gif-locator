@@ -1,3 +1,25 @@
-<button type="button" class="gif-card" (click)="selected.emit(gif())">
-  <img class="gif-card__image" [src]="gif().previewUrl" [alt]="gif().title" loading="lazy" />
-</button>
+<div class="gif-card">
+  <button
+    type="button"
+    class="gif-card__open"
+    [attr.aria-label]="'Open details: ' + gif().title"
+    (click)="selected.emit(gif())"
+  >
+    <img class="gif-card__image" [src]="gif().previewUrl" [alt]="gif().title" loading="lazy" />
+  </button>
+
+  <button
+    type="button"
+    class="gif-card__download"
+    [class.gif-card__download--active]="downloading()"
+    [attr.aria-label]="'Download ' + gif().title"
+    [attr.aria-busy]="downloading()"
+    (click)="download.emit(gif())"
+  >
+    @if (downloading()) {
+      <mat-spinner diameter="18" />
+    } @else {
+      <mat-icon>download</mat-icon>
+    }
+  </button>
+</div>

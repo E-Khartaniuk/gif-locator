@@ -40,3 +40,7 @@ export interface GiphyListResponseDto {
   data: GiphyGifDto[];
   pagination: GiphyPaginationDto;
 }
+
+export interface GiphyGifResponseDto {
+  data: GiphyGifDto;
+}

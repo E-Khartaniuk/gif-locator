@@ -59,6 +59,13 @@
     }
   }
 }
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+}
+
 .actions {
   flex-wrap: wrap;
   gap: 8px;

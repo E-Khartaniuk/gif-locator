@@ -1,3 +1,11 @@
+export const GIF_RATINGS = ['g', 'pg', 'pg-13', 'r'] as const;
+export type GifRating = (typeof GIF_RATINGS)[number];
+export const DEFAULT_GIF_RATING: GifRating = 'g';
+
+export function isGifRating(value: string | null): value is GifRating {
+  return GIF_RATINGS.includes(value as GifRating);
+}
+
 export interface GifAuthor {
   username: string;
   displayName: string;

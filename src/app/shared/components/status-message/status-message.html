@@ -1,0 +1,8 @@
+<div class="status" role="status">
+  <mat-icon class="status__icon" aria-hidden="true">{{ icon() }}</mat-icon>
+  <h3 class="status__heading">{{ heading() }}</h3>
+  @if (message()) {
+    <p class="status__message">{{ message() }}</p>
+  }
+  <ng-content />
+</div>

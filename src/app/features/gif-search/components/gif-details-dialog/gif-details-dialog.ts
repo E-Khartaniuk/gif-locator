@@ -1,85 +1,67 @@
-import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { DatePipe, UpperCasePipe } from '@angular/common';
 import { Clipboard } from '@angular/cdk/clipboard';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatDialogConfig, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { finalize } from 'rxjs';
 
-import { Gif } from '../../../../core/models/gif.model';
-import { FileDownload } from '../../../../core/services/file-download';
+import { GifDownloader } from '../../../../core/services/gif-downloader';
 import { FileSizePipe } from '../../../../shared/pipes/file-size-pipe';
+import { GifSearchStore } from '../../gif-search-store';
 
-export interface GifDetailsDialogData {
-  gifs: Gif[];
-  startIndex: number;
-}
+export const GIF_DETAILS_DIALOG_CONFIG: MatDialogConfig = {
+  width: '900px',
+  maxWidth: '95vw',
+  autoFocus: 'dialog',
+};
 
 @Component({
   selector: 'app-gif-details-dialog',
-  imports: [MatDialogModule, MatButtonModule, MatIconModule, DatePipe, UpperCasePipe, FileSizePipe],
+  imports: [
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    DatePipe,
+    UpperCasePipe,
+    FileSizePipe,
+  ],
   templateUrl: './gif-details-dialog.html',
   styleUrl: './gif-details-dialog.scss',
   host: {
-    '(document:keydown.arrowleft)': 'prev()',
-    '(document:keydown.arrowright)': 'next()',
+    '(document:keydown.arrowleft)': 'store.selectPrev()',
+    '(document:keydown.arrowright)': 'store.selectNext()',
   },
 })
 export class GifDetailsDialog {
-  private readonly data = inject<GifDetailsDialogData>(MAT_DIALOG_DATA);
+  protected readonly store = inject(GifSearchStore);
   private readonly clipboard = inject(Clipboard);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly fileDownload = inject(FileDownload);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly gifDownloader = inject(GifDownloader);
 
-  protected readonly isDownloading = signal(false);
+  protected readonly gif = this.store.selectedGif;
 
-  protected readonly gifs = this.data.gifs;
-  protected readonly index = signal(this.data.startIndex);
-
-  protected readonly gif = computed(() => this.gifs[this.index()]);
-  protected readonly hasPrev = computed(() => this.index() > 0);
-  protected readonly hasNext = computed(() => this.index() < this.gifs.length - 1);
-
-  protected prev(): void {
-    if (this.hasPrev()) this.index.update((i) => i - 1);
-  }
-
-  protected next(): void {
-    if (this.hasNext()) this.index.update((i) => i + 1);
-  }
+  protected readonly isDownloading = computed(() => {
+    const gif = this.gif();
+    return gif ? this.gifDownloader.isDownloading(gif.id) : false;
+  });
 
   protected copyLink(): void {
-    const copied = this.clipboard.copy(this.gif().originalUrl);
+    const gif = this.gif();
+    if (!gif) return;
+
+    const copied = this.clipboard.copy(gif.originalUrl);
     this.showMessage(copied ? 'Link copied to clipboard' : 'Could not copy the link');
   }
 
   protected download(): void {
     const gif = this.gif();
-    this.isDownloading.set(true);
-
-    this.fileDownload
-      .download(gif.originalUrl, this.toFileName(gif))
-      .pipe(
-        finalize(() => this.isDownloading.set(false)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        error: () => this.showMessage('Download failed. Please try again.'),
-      });
-  }
-
-  private toFileName(gif: Gif): string {
-    const slug = gif.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-    return `${slug || gif.id}.gif`;
+    if (gif) this.gifDownloader.download(gif);
   }
 
   private showMessage(message: string): void {
-    this.snackBar.open(message, undefined, { duration: 2500 });
+    this.snackBar.open(message);
   }
 }

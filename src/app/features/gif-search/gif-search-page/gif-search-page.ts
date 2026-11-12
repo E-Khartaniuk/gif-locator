@@ -1,103 +1,98 @@
-import { Component, computed, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, distinctUntilChanged, map, of, startWith, switchMap } from 'rxjs';
-import { MatDialog } from '@angular/material/dialog';
-import {
-  GifDetailsDialog,
-  GifDetailsDialogData,
-} from '../components/gif-details-dialog/gif-details-dialog';
-import { GiphyApi, MAX_PAGE_INDEX, MAX_RESULTS, PAGE_SIZE } from '../../../core/services/giphy-api';
-import { Gif, GifPage } from '../../../core/models/gif.model';
-import { GifCard } from '../../../shared/components/gif-card/gif-card';
-import { SearchBar } from '../components/search-bar/search-bar';
+import { Component, effect, inject, Injector, untracked } from '@angular/core';
+import { UpperCasePipe } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import { MatSelectModule } from '@angular/material/select';
 
-type SearchState =
-  { status: 'loading' } | { status: 'success'; result: GifPage } | { status: 'error' };
-
-interface SearchParams {
-  query: string;
-  page: number;
-}
+import { GIF_RATINGS, GifRating } from '../../../core/models/gif.model';
+import { GifDownloader } from '../../../core/services/gif-downloader';
+import { PAGE_SIZE } from '../../../core/services/giphy-api';
+import { GifCard } from '../../../shared/components/gif-card/gif-card';
+import { StatusMessage } from '../../../shared/components/status-message/status-message';
+import {
+  GIF_DETAILS_DIALOG_CONFIG,
+  GifDetailsDialog,
+} from '../components/gif-details-dialog/gif-details-dialog';
+import { SearchBar } from '../components/search-bar/search-bar';
+import { GifSearchStore, SearchError } from '../gif-search-store';
 
 @Component({
   selector: 'app-gif-search-page',
-  imports: [GifCard, SearchBar, MatPaginator],
+  imports: [
+    GifCard,
+    SearchBar,
+    StatusMessage,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatPaginator,
+    MatSelectModule,
+    UpperCasePipe,
+  ],
+  providers: [GifSearchStore],
   templateUrl: './gif-search-page.html',
   styleUrl: './gif-search-page.scss',
 })
 export class GifSearchPage {
-  private readonly giphyApi = inject(GiphyApi);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  protected readonly store = inject(GifSearchStore);
+  protected readonly gifDownloader = inject(GifDownloader);
   private readonly dialog = inject(MatDialog);
+  private readonly injector = inject(Injector);
 
   protected readonly pageSize = PAGE_SIZE;
+  protected readonly ratings = GIF_RATINGS;
+  protected readonly ratingHints: Record<GifRating, string> = {
+    g: 'All ages',
+    pg: 'Mild',
+    'pg-13': 'Teens',
+    r: 'Mature',
+  };
 
-  private readonly params$ = this.route.queryParamMap.pipe(
-    map((params): SearchParams => ({
-      query: (params.get('q') ?? '').trim(),
-      page: Math.min(Math.max(Number(params.get('page')) || 1, 1) - 1, MAX_PAGE_INDEX),
-    })),
-    distinctUntilChanged((a, b) => a.query === b.query && a.page === b.page),
-  );
+  protected readonly skeletons = Array.from({ length: PAGE_SIZE }, (_, index) => index);
 
-  protected readonly params = toSignal(this.params$, { initialValue: { query: '', page: 0 } });
+  protected readonly errorTexts: Record<SearchError, { heading: string; message: string }> = {
+    'rate-limit': {
+      heading: 'Too many requests',
+      message: 'The Giphy API limit has been reached. Please wait a few minutes and try again.',
+    },
+    network: {
+      heading: 'No connection',
+      message: 'Check your internet connection and try again.',
+    },
+    unknown: {
+      heading: 'Something went wrong',
+      message: 'We could not load GIFs. Please try again.',
+    },
+  };
 
-  private readonly state = toSignal(
-    this.params$.pipe(
-      switchMap(({ query, page }) => {
-        const request$ = query ? this.giphyApi.search(query, page) : this.giphyApi.trending(page);
-        return request$.pipe(
-          map((result): SearchState => ({ status: 'success', result })),
-          catchError(() => of<SearchState>({ status: 'error' })),
-          startWith<SearchState>({ status: 'loading' }),
-        );
-      }),
-    ),
-    { initialValue: { status: 'loading' } as SearchState },
-  );
+  private dialogRef: MatDialogRef<GifDetailsDialog> | null = null;
 
-  protected readonly isLoading = computed(() => this.state().status === 'loading');
-  protected readonly hasError = computed(() => this.state().status === 'error');
-
-  protected readonly gifs = computed<Gif[]>(() => {
-    const state = this.state();
-    return state.status === 'success' ? state.result.items : [];
-  });
-
-  protected readonly isEmpty = computed(
-    () => this.state().status === 'success' && this.gifs().length === 0,
-  );
-
-  protected readonly totalCount = computed(() => {
-    const state = this.state();
-    return state.status === 'success' ? Math.min(state.result.totalCount, MAX_RESULTS) : 0;
-  });
-
-  protected onSearch(query: string): void {
-    this.router.navigate([], {
-      queryParams: { q: query || null, page: null },
-    });
-  }
-
-  protected onGifSelected(gif: Gif): void {
-    const gifs = this.gifs();
-    this.dialog.open<GifDetailsDialog, GifDetailsDialogData>(GifDetailsDialog, {
-      data: { gifs, startIndex: gifs.indexOf(gif) },
-      width: '900px',
-      maxWidth: '95vw',
-      autoFocus: 'dialog',
+  constructor() {
+    effect(() => {
+      const isOpen = this.store.selectedGifId() !== null;
+      untracked(() => (isOpen ? this.openDialog() : this.dialogRef?.close()));
     });
   }
 
   protected onPageChange(event: PageEvent): void {
-    const page = event.pageIndex + 1;
-    this.router.navigate([], {
-      queryParams: { page: page === 1 ? null : page },
-      queryParamsHandling: 'merge',
-    });
+    this.store.goToPage(event.pageIndex);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  private openDialog(): void {
+    if (this.dialogRef) return;
+
+    this.dialogRef = this.dialog.open(GifDetailsDialog, {
+      ...GIF_DETAILS_DIALOG_CONFIG,
+      injector: this.injector,
+    });
+
+    this.dialogRef.afterClosed().subscribe(() => {
+      this.dialogRef = null;
+      this.store.closeGif();
+    });
   }
 }
