@@ -2,7 +2,11 @@ import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, distinctUntilChanged, map, of, startWith, switchMap } from 'rxjs';
-
+import { MatDialog } from '@angular/material/dialog';
+import {
+  GifDetailsDialog,
+  GifDetailsDialogData,
+} from '../components/gif-details-dialog/gif-details-dialog';
 import { GiphyApi, MAX_PAGE_INDEX, MAX_RESULTS, PAGE_SIZE } from '../../../core/services/giphy-api';
 import { Gif, GifPage } from '../../../core/models/gif.model';
 import { GifCard } from '../../../shared/components/gif-card/gif-card';
@@ -27,22 +31,9 @@ export class GifSearchPage {
   private readonly giphyApi = inject(GiphyApi);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly pageSize = PAGE_SIZE;
-
-  protected readonly totalCount = computed(() => {
-    const state = this.state();
-    return state.status === 'success' ? Math.min(state.result.totalCount, MAX_RESULTS) : 0;
-  });
-
-  protected onPageChange(event: PageEvent): void {
-    const page = event.pageIndex + 1;
-    this.router.navigate([], {
-      queryParams: { page: page === 1 ? null : page },
-      queryParamsHandling: 'merge',
-    });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
 
   private readonly params$ = this.route.queryParamMap.pipe(
     map((params): SearchParams => ({
@@ -80,6 +71,11 @@ export class GifSearchPage {
     () => this.state().status === 'success' && this.gifs().length === 0,
   );
 
+  protected readonly totalCount = computed(() => {
+    const state = this.state();
+    return state.status === 'success' ? Math.min(state.result.totalCount, MAX_RESULTS) : 0;
+  });
+
   protected onSearch(query: string): void {
     this.router.navigate([], {
       queryParams: { q: query || null, page: null },
@@ -87,6 +83,21 @@ export class GifSearchPage {
   }
 
   protected onGifSelected(gif: Gif): void {
-    console.log('selected', gif);
+    const gifs = this.gifs();
+    this.dialog.open<GifDetailsDialog, GifDetailsDialogData>(GifDetailsDialog, {
+      data: { gifs, startIndex: gifs.indexOf(gif) },
+      width: '900px',
+      maxWidth: '95vw',
+      autoFocus: 'dialog',
+    });
+  }
+
+  protected onPageChange(event: PageEvent): void {
+    const page = event.pageIndex + 1;
+    this.router.navigate([], {
+      queryParams: { page: page === 1 ? null : page },
+      queryParamsHandling: 'merge',
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
