@@ -1,0 +1,79 @@
+<h2 mat-dialog-title class="title">{{ gif().title }}</h2>
+
+<mat-dialog-content class="details">
+  <div class="details__media">
+    <button
+      mat-icon-button
+      class="details__nav"
+      aria-label="Previous GIF"
+      [disabled]="!hasPrev()"
+      (click)="prev()"
+    >
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+
+    <img
+      class="details__image"
+      [src]="gif().originalUrl"
+      [alt]="gif().title"
+      [width]="gif().width"
+      [height]="gif().height"
+    />
+
+    <button
+      mat-icon-button
+      class="details__nav"
+      aria-label="Next GIF"
+      [disabled]="!hasNext()"
+      (click)="next()"
+    >
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+
+  <p class="details__counter">{{ index() + 1 }} / {{ gifs.length }}</p>
+
+  <dl class="details__info">
+    <dt>Author</dt>
+    <dd>
+      @if (gif().author; as author) {
+        <a class="details__author" [href]="author.profileUrl" target="_blank" rel="noopener">
+          <img [src]="author.avatarUrl" alt="" width="24" height="24" />
+          {{ author.displayName }}
+        </a>
+      } @else {
+        Unknown
+      }
+    </dd>
+
+    <dt>Uploaded</dt>
+    <dd>
+      @if (gif().createdAt; as createdAt) {
+        {{ createdAt | date: 'mediumDate' }}
+      } @else {
+        Unknown
+      }
+    </dd>
+
+    <dt>Resolution</dt>
+    <dd>{{ gif().width }} × {{ gif().height }} px</dd>
+
+    <dt>Size</dt>
+    <dd>{{ gif().sizeBytes | fileSize }}</dd>
+
+    <dt>Rating</dt>
+    <dd>{{ gif().rating | uppercase }}</dd>
+
+    @if (gif().source) {
+      <dt>Source</dt>
+      <dd>
+        <a [href]="gif().source" target="_blank" rel="noopener">{{ gif().source }}</a>
+      </dd>
+    }
+  </dl>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <a mat-button [href]="gif().pageUrl" target="_blank" rel="noopener">Open on Giphy</a>
+  <button mat-button mat-dialog-close>Close</button>
+</mat-dialog-actions>
