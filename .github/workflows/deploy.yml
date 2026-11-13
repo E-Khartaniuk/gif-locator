@@ -27,6 +27,8 @@ jobs:
 
       - run: npm ci
 
+      - run: npx ng test --watch=false
+
       - run: npx ng build --base-href /gif-locator/
 
       - name: Add SPA fallback

@@ -48,11 +48,24 @@ The key is stored in `src/environments/environment.development.ts` (used by `npm
 | --------------- | ----------------------------- |
 | `npm start`     | Dev server with live reload   |
 | `npm run build` | Production build into `dist/` |
+| `npm test`      | Unit tests (Vitest)           |
+
+## Tests
+
+Unit tests cover the logic rather than component rendering:
+
+- **Mapper**: DTO to model conversion, missing author, empty title, invalid and zero dates
+- **File size pipe**: bytes, kilobytes, megabytes, unknown size
+- **API key interceptor**: the key is added to Giphy API requests only
+- **Giphy API service**: request URLs and params, response mapping, error propagation
+  (`HttpTestingController`)
+- **Search store**: URL param parsing and fallbacks, loading / empty / error states, retry,
+  navigation and selection across pages
 
 ## Deployment
 
-Every push to `main` is built and deployed to GitHub Pages by the workflow in
-`.github/workflows/deploy.yml`.
+Every push to `main` runs the unit tests and, if they pass, builds and deploys the app to GitHub
+Pages via `.github/workflows/deploy.yml`.
 
 ## Project structure
 
@@ -105,7 +118,7 @@ Blob (Giphy media allows CORS), saved through a temporary object URL, and the UR
 
 ## Possible improvements
 
-- Unit tests for the mapper, interceptor, API service and store; e2e tests with Playwright
+- Component tests and e2e tests with Playwright
 - Localization (EN / UK) together with Giphy's `lang` search parameter
 - Caching of already loaded pages
 - Infinite scroll as an alternative to pagination
